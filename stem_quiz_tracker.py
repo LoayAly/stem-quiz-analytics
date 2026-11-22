@@ -122,7 +122,7 @@ def show_topic_summary(log_path, student_name):
         print(f"No recorded attempts found for {student_name}.")
         return
 
-    print(f"\n--- Mastery Report for {student_name} ---")
+    print(f"\n--- Report for {student_name} ---")
     weak_areas = []
     for topic in sorted(stats.keys()):
         right, total = stats[topic]
@@ -137,7 +137,7 @@ def show_topic_summary(log_path, student_name):
         review_list = ", ".join(t[0] for t in weak_areas)
         print(f"Suggested review topics: {review_list}")
     else:
-        print("Solid performance across all topics!")
+        print("Excellent performance across all topics!")
 
 
 def start_quiz(questions, log_path):
