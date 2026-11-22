@@ -4,12 +4,12 @@ import random
 
 
 class Question:
-    #Represents a single multiple-choice STEM question.
+    """Represents a single multiple-choice STEM question."""
 
     def __init__(self, topic, prompt, options, answer, explanation):
         self.topic = topic
         self.prompt = prompt
-        self.options = options  # mapping 'A', 'B', 'C' to text
+        self.options = options  # dict mapping 'A', 'B', 'C' to text
         self.answer = answer.upper()
         self.explanation = explanation
 
@@ -55,7 +55,7 @@ DEFAULT_QUESTIONS = [
 
 
 def load_questions(csv_path):
-    #Loads custom questions from a CSV file if available, otherwise uses defaults.
+    """Loads custom questions from a CSV file if available, otherwise uses defaults."""
     if not os.path.exists(csv_path):
         return DEFAULT_QUESTIONS
 
@@ -83,7 +83,7 @@ def load_questions(csv_path):
 
 
 def log_attempt(log_path, student_name, topic, is_correct):
-    #Appends a single question result to the CSV progress log.
+    """Appends a single question result to the CSV progress log."""
     file_exists = os.path.exists(log_path)
     try:
         with open(log_path, mode="a", newline="", encoding="utf-8") as f:
@@ -96,7 +96,7 @@ def log_attempt(log_path, student_name, topic, is_correct):
 
 
 def show_topic_summary(log_path, student_name):
-    #Reads the student's log history and highlights topics below 75% accuracy.
+    """Reads the student's log history and highlights topics below 75% accuracy."""
     if not os.path.exists(log_path):
         print("No progress history found yet.")
         return
@@ -122,7 +122,7 @@ def show_topic_summary(log_path, student_name):
         print(f"No recorded attempts found for {student_name}.")
         return
 
-    print(f"\n--- Report for {student_name} ---")
+    print(f"\n--- Mastery Report for {student_name} ---")
     weak_areas = []
     for topic in sorted(stats.keys()):
         right, total = stats[topic]
@@ -137,11 +137,11 @@ def show_topic_summary(log_path, student_name):
         review_list = ", ".join(t[0] for t in weak_areas)
         print(f"Suggested review topics: {review_list}")
     else:
-        print("Excellent performance across all topics!")
+        print("Solid performance across all topics!")
 
 
 def start_quiz(questions, log_path):
-    #Runs an interactive quiz session and updates student analytics.
+    """Runs an interactive quiz session and updates student analytics."""
     name = input("Enter student name (or press Enter for 'Guest'): ").strip()
     if not name:
         name = "Guest"
