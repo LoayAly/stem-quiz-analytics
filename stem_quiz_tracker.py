@@ -9,12 +9,11 @@ class Question:
     def __init__(self, topic, prompt, options, answer, explanation):
         self.topic = topic
         self.prompt = prompt
-        self.options = options  # dict mapping 'A', 'B', 'C' to text
+        self.options = options
         self.answer = answer.upper()
         self.explanation = explanation
 
 
-# Built-in question bank covering Math, Logic, and Python basics
 DEFAULT_QUESTIONS = [
     Question(
         topic="Algebra & Functions",
@@ -55,14 +54,14 @@ DEFAULT_QUESTIONS = [
 
 
 def load_questions(csv_path):
-    """Loads custom questions from a CSV file if available, otherwise uses defaults."""
-    if not os.path.exists(csv_path):
+    """Loads custom questions from a CSV file if it exists, otherwise uses defaults."""
+    if os.path.exists(csv_path) == False:
         return DEFAULT_QUESTIONS
 
     questions = []
     try:
-        with open(csv_path, mode="r", newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
+        with open(csv_path, mode="r", newline="", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
             for row in reader:
                 q = Question(
                     topic=row["topic"].strip(),
@@ -76,9 +75,13 @@ def load_questions(csv_path):
                     explanation=row["explanation"].strip(),
                 )
                 questions.append(q)
-        return questions if questions else DEFAULT_QUESTIONS
-    except (KeyError, OSError, ValueError) as err:
+    except Exception as err:
         print(f"[Notice] Could not load {csv_path} ({err}). Using built-in questions.")
+        return DEFAULT_QUESTIONS
+
+    if len(questions) > 0:
+        return questions
+    else:
         return DEFAULT_QUESTIONS
 
 
@@ -86,55 +89,58 @@ def log_attempt(log_path, student_name, topic, is_correct):
     """Appends a single question result to the CSV progress log."""
     file_exists = os.path.exists(log_path)
     try:
-        with open(log_path, mode="a", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            if not file_exists:
+        with open(log_path, mode="a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            if file_exists == False:
                 writer.writerow(["student", "topic", "correct"])
             writer.writerow([student_name, topic, int(is_correct)])
-    except OSError as err:
+    except Exception as err:
         print(f"[Warning] Could not save attempt to log: {err}")
 
 
 def show_topic_summary(log_path, student_name):
     """Reads the student's log history and highlights topics below 75% accuracy."""
-    if not os.path.exists(log_path):
+    if os.path.exists(log_path) == False:
         print("No progress history found yet.")
         return
 
     # Stores topic -> [correct_count, total_attempts]
     stats = {}
     try:
-        with open(log_path, mode="r", newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
+        with open(log_path, mode="r", newline="", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
             for row in reader:
                 if row["student"].strip().lower() == student_name.lower():
                     topic = row["topic"].strip()
                     correct = int(row["correct"])
                     if topic not in stats:
                         stats[topic] = [0, 0]
-                    stats[topic][0] += correct
-                    stats[topic][1] += 1
-    except (KeyError, OSError, ValueError) as err:
+                    stats[topic][0] = stats[topic][0] + correct
+                    stats[topic][1] = stats[topic][1] + 1
+    except Exception as err:
         print(f"[Warning] Error reading progress log: {err}")
         return
 
-    if not stats:
+    if len(stats) == 0:
         print(f"No recorded attempts found for {student_name}.")
         return
 
-    print(f"\n--- Mastery Report for {student_name} ---")
+    print(f"\n--- Report for {student_name} ---")
     weak_areas = []
     for topic in sorted(stats.keys()):
-        right, total = stats[topic]
+        right = stats[topic][0]
+        total = stats[topic][1]
         pct = (right / total) * 100
-        print(f"  {topic}: {right}/{total} ({pct:.0f}%)")
+        print(f"  {topic}: {right}/{total} ({round(pct)}%)")
         if pct < 75.0:
-            weak_areas.append((topic, pct))
+            weak_areas.append([pct, topic])
 
-    if weak_areas:
-        # Sort weakest topic first
-        weak_areas.sort(key=lambda item: item[1])
-        review_list = ", ".join(t[0] for t in weak_areas)
+    if len(weak_areas) > 0:
+        weak_areas.sort()
+        review_names = []
+        for item in weak_areas:
+            review_names.append(item[1])
+        review_list = ", ".join(review_names)
         print(f"Suggested review topics: {review_list}")
     else:
         print("Solid performance across all topics!")
@@ -143,15 +149,16 @@ def show_topic_summary(log_path, student_name):
 def start_quiz(questions, log_path):
     """Runs an interactive quiz session and updates student analytics."""
     name = input("Enter student name (or press Enter for 'Guest'): ").strip()
-    if not name:
+    if name == "":
         name = "Guest"
 
     quiz_pool = list(questions)
     random.shuffle(quiz_pool)
 
     score = 0
-    for idx, q in enumerate(quiz_pool, start=1):
-        print(f"\nQ{idx} [{q.topic}]: {q.prompt}")
+    q_num = 1
+    for q in quiz_pool:
+        print(f"\nQ{q_num} [{q.topic}]: {q.prompt}")
         for option_key in ("A", "B", "C"):
             print(f"  {option_key}) {q.options[option_key]}")
 
@@ -162,21 +169,19 @@ def start_quiz(questions, log_path):
                 print("Invalid input. Please enter A, B, or C.")
 
         if choice == q.answer:
-            score += 1
+            score = score + 1
             print("Correct!")
             log_attempt(log_path, name, q.topic, True)
         else:
             print(f"Incorrect — the answer is {q.answer}. {q.explanation}")
             log_attempt(log_path, name, q.topic, False)
 
+        q_num = q_num + 1
+
     print(f"\nSession Score: {score}/{len(quiz_pool)}")
     show_topic_summary(log_path, name)
 
 
 if __name__ == "__main__":
-    folder = os.path.dirname(os.path.abspath(__file__))
-    custom_questions_csv = os.path.join(folder, "questions.csv")
-    progress_log_csv = os.path.join(folder, "student_progress.csv")
-
-    active_questions = load_questions(custom_questions_csv)
-    start_quiz(active_questions, progress_log_csv)
+    active_questions = load_questions("questions.csv")
+    start_quiz(active_questions, "student_progress.csv")
