@@ -1,5 +1,5 @@
-# stem-quiz-analytics Trackere
-A lightweight, modular Python tool designed to help students practice core STEM concepts (Algebra, Binary Logic, and Python Basics) while giving instructors clear visibility into topic-by-topic mastery.
+# stem-quiz-analytics Tracker
+It is a Python program that helps students practice fundamental STEM concepts (Binary Logic, Algebra, and Python Basics) while providing the instructor with a clear picture of each topic's level of proficiency.
 
 # Key Features
 - **Interactive Quiz Engine:** Randomizes questions, validates student input, and gives immediate step-by-step explanations for incorrect answers.
